@@ -1,14 +1,26 @@
 package br.ufpe.cin.if710.podcast.ui.adapter;
 
-import java.util.List;
+import android.content.ContentValues;
 import android.content.Context;
+import android.content.Intent;
+import android.graphics.Color;
+import android.media.MediaPlayer;
+import android.net.Uri;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.TextView;
 
+import java.io.File;
+import java.util.List;
+
 import br.ufpe.cin.if710.podcast.R;
+import br.ufpe.cin.if710.podcast.db.PodcastDBHelper;
+import br.ufpe.cin.if710.podcast.db.PodcastProviderContract;
 import br.ufpe.cin.if710.podcast.domain.ItemFeed;
+import br.ufpe.cin.if710.podcast.ui.DownloadService;
 
 public class XmlFeedAdapter extends ArrayAdapter<ItemFeed> {
 
@@ -49,22 +61,108 @@ public class XmlFeedAdapter extends ArrayAdapter<ItemFeed> {
     static class ViewHolder {
         TextView item_title;
         TextView item_date;
+        Button baixarPoad;
+        MediaPlayer mp;
     }
 
     @Override
-    public View getView(int position, View convertView, ViewGroup parent) {
-        ViewHolder holder;
+    public View getView(final int position, View convertView, ViewGroup parent) {
+        final ItemFeed item = getItem(position);
+
+        final ViewHolder holder;
         if (convertView == null) {
             convertView = View.inflate(getContext(), linkResource, null);
             holder = new ViewHolder();
             holder.item_title = (TextView) convertView.findViewById(R.id.item_title);
+            holder.item_title.setTextColor(Color.RED);
             holder.item_date = (TextView) convertView.findViewById(R.id.item_date);
+            holder.item_date.setTextColor(Color.RED);
             convertView.setTag(holder);
+
+            holder.baixarPoad = convertView.findViewById(R.id.item_action);
+            holder.baixarPoad.setTextColor(Color.WHITE);
+            Log.d("UriAntesdeEntrar", getItem(position).getDownloadUri());
+
+            if (item.getDownloadUri().equals("Nulo")){  //verifica se item ja foi baixado ou nao através da uri
+                holder.baixarPoad.setBackgroundColor(Color.RED);
+            } else {
+                Log.d("log", "Opa a uri ta att");
+                holder.baixarPoad.setBackgroundColor(Color.BLUE);
+                holder.baixarPoad.setText("Tocar");
+
+            }
+            holder.baixarPoad.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    Log.d("click", "click");
+                    String base = "/storage/emulated/0/Podcasts";       //obtém a possível uri e já a seta.
+                    if (item.getDownloadUri().equals("Nulo")) {
+                        getItem(position).setDownloadUri(base+getItem(position).getDownloadLink().substring(getItem(position).getDownloadLink().lastIndexOf('/')
+                                ,getItem(position).getDownloadLink().length()));
+
+                        ContentValues cv = new ContentValues();         //atualiza no bd
+                        cv.put(PodcastDBHelper.EPISODE_FILE_URI, getItem(position).getDownloadUri());
+                        String selection = PodcastProviderContract.EPISODE_LINK + " = ?";
+                        String[] selection_args = new String[]{getItem(position).getLink()};
+                        getContext().getContentResolver().update(PodcastProviderContract.EPISODE_LIST_URI, cv, selection, selection_args);
+                        Log.d("Uri", getItem(position).getDownloadUri());
+
+
+                        //Prepara o download e chama o service pra baixar e troca o texto do botao
+                        String link = getItem(position).getDownloadLink();
+                        Intent downloadPoad = new Intent(getContext(), DownloadService.class);
+                        downloadPoad.setData(Uri.parse(link));
+                        getContext().startService(downloadPoad);
+                        holder.baixarPoad.setBackgroundColor(Color.RED);
+                        holder.baixarPoad.setEnabled(false);
+                        holder.baixarPoad.setText("Baixando...");
+
+                    } else {    //Bom... Se eu ja tiver adicionado a URI no arquivo, eu posso tocá-lo
+                        Log.d("UriElse", "Vai tocar o somzinho");
+                        Uri uri = Uri.parse(item.getDownloadUri());
+                        if(holder.baixarPoad.getText().equals("Tocar")) {
+                            if (holder.mp == null) {            //Cria o media player e começa a tocar
+                                holder.mp = MediaPlayer.create(getContext(), uri);
+                                if (holder.mp != null) {
+                                    holder.mp.start();
+                                    holder.baixarPoad.setText("Parar");
+                                    Log.d("Log", String.valueOf(holder.baixarPoad.getText()));
+                                }
+                            }else{
+                                holder.mp.start();
+                            }
+                                                      //Para de tocar o podcast
+                        }else if(holder.baixarPoad.getText().equals("Parar")){
+                            Log.d("log", "Cliquei em parar");
+                            holder.mp.pause();
+                            holder.baixarPoad.setText("Cont");
+                                                    //Continua da posição de onde foi parado
+                        } else if(holder.baixarPoad.getText().equals("Cont")){
+                            int duracao = holder.mp.getCurrentPosition();
+                            holder.mp.seekTo(duracao);
+                            holder.mp.start();
+                            holder.baixarPoad.setText("Parar");
+                        }
+                        holder.mp.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                                     @Override                  //Quando acabar de tocar, deleta o arquivo
+                                     public void onCompletion(MediaPlayer mediaPlayer) {
+                                         File file = new File(item.getDownloadUri());
+                                         file.delete();
+                                         item.setDownloadUri("Nulo");
+                                         Log.d("Log", "Opa deletei");
+                                     }
+                                 });
+
+                    }
+                }
+            });
+
         } else {
             holder = (ViewHolder) convertView.getTag();
         }
         holder.item_title.setText(getItem(position).getTitle());
         holder.item_date.setText(getItem(position).getPubDate());
         return convertView;
+
     }
 }

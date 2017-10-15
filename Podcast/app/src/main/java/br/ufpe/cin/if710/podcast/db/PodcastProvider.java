@@ -6,6 +6,8 @@ import android.database.Cursor;
 import android.net.Uri;
 
 public class PodcastProvider extends ContentProvider {
+    private PodcastDBHelper dbhelper;
+
     public PodcastProvider() {
     }
 
@@ -24,27 +26,34 @@ public class PodcastProvider extends ContentProvider {
 
     @Override
     public Uri insert(Uri uri, ContentValues values) {
-        // TODO: Implement this to handle requests to insert a new row.
-        throw new UnsupportedOperationException("Not yet implemented");
+        String selection = PodcastProviderContract.EPISODE_LINK + " = ?";
+        String[] selectionArgs = new String[]{values.getAsString(PodcastDBHelper.EPISODE_LINK)};
+        long id = dbhelper.getWritableDatabase().update(PodcastDBHelper.DATABASE_TABLE, values, selection, selectionArgs);
+        if (id == 0) {
+            values.put(PodcastDBHelper.EPISODE_FILE_URI, "Nulo");
+            id = dbhelper.getWritableDatabase().insert(PodcastDBHelper.DATABASE_TABLE, null, values);
+        }
+        return Uri.withAppendedPath(PodcastProviderContract.EPISODE_LIST_URI, String.valueOf(id));
     }
 
     @Override
     public boolean onCreate() {
-        // TODO: Implement this to initialize your content provider on startup.
+        dbhelper = PodcastDBHelper.getInstance(getContext());
+        if(dbhelper != null) return true;
         return false;
     }
 
     @Override
     public Cursor query(Uri uri, String[] projection, String selection,
                         String[] selectionArgs, String sortOrder) {
-        // TODO: Implement this to handle query requests from clients.
-        throw new UnsupportedOperationException("Not yet implemented");
+        Cursor cursor = null;
+        cursor = dbhelper.getReadableDatabase().query(PodcastDBHelper.DATABASE_TABLE, projection, selection, selectionArgs, null, null, sortOrder);
+        return cursor;
     }
 
     @Override
     public int update(Uri uri, ContentValues values, String selection,
                       String[] selectionArgs) {
-        // TODO: Implement this to handle requests to update one or more rows.
-        throw new UnsupportedOperationException("Not yet implemented");
+        return dbhelper.getWritableDatabase().update(PodcastDBHelper.DATABASE_TABLE, values, selection, selectionArgs);
     }
 }

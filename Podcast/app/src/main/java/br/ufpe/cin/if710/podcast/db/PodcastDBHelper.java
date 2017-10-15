@@ -1,9 +1,9 @@
 package br.ufpe.cin.if710.podcast.db;
 
 import android.content.Context;
-import android.database.DatabaseErrorHandler;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.util.Log;
 
 public class PodcastDBHelper extends SQLiteOpenHelper {
 
@@ -51,6 +51,8 @@ public class PodcastDBHelper extends SQLiteOpenHelper {
     @Override
     public void onCreate(SQLiteDatabase sqLiteDatabase) {
         sqLiteDatabase.execSQL(CREATE_CMD);
+        Log.w("LOG_TAG", CREATE_CMD);
+
     }
 
     @Override
