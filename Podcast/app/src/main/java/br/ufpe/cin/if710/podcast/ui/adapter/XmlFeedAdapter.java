@@ -3,6 +3,7 @@ package br.ufpe.cin.if710.podcast.ui.adapter;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.media.MediaPlayer;
 import android.net.Uri;
@@ -68,7 +69,8 @@ public class XmlFeedAdapter extends ArrayAdapter<ItemFeed> {
     @Override
     public View getView(final int position, View convertView, ViewGroup parent) {
         final ItemFeed item = getItem(position);
-
+        final SharedPreferences sharedPref = getContext().getSharedPreferences("tempo", getContext().MODE_PRIVATE);
+                                                                //guardo o tempo para continuar de onde parou
         final ViewHolder holder;
         if (convertView == null) {
             convertView = View.inflate(getContext(), linkResource, null);
@@ -87,9 +89,13 @@ public class XmlFeedAdapter extends ArrayAdapter<ItemFeed> {
                 holder.baixarPoad.setBackgroundColor(Color.RED);
             } else {
                 Log.d("log", "Opa a uri ta att");
+                int valorTempo = sharedPref.getInt(item.getTitle(), 0);
                 holder.baixarPoad.setBackgroundColor(Color.BLUE);
-                holder.baixarPoad.setText("Tocar");
-
+                if(valorTempo == 0) {
+                    holder.baixarPoad.setText("Tocar");
+                }else{
+                    holder.baixarPoad.setText("Cont");
+                }
             }
             holder.baixarPoad.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -129,6 +135,8 @@ public class XmlFeedAdapter extends ArrayAdapter<ItemFeed> {
                                     Log.d("Log", String.valueOf(holder.baixarPoad.getText()));
                                 }
                             }else{
+                                int valorTempo = sharedPref.getInt("valorTempo", 0);
+                                holder.mp.seekTo(valorTempo);
                                 holder.mp.start();
                             }
                                                       //Para de tocar o podcast
@@ -136,10 +144,21 @@ public class XmlFeedAdapter extends ArrayAdapter<ItemFeed> {
                             Log.d("log", "Cliquei em parar");
                             holder.mp.pause();
                             holder.baixarPoad.setText("Cont");
-                                                    //Continua da posição de onde foi parado
+                                                                                //guardo o tempo onde o pod parou
+                            SharedPreferences.Editor editor = sharedPref.edit();
+                            editor.putInt(item.getTitle(), holder.mp.getCurrentPosition());
+                            editor.commit();
+                                                         //Continua da posição de onde foi parado
                         } else if(holder.baixarPoad.getText().equals("Cont")){
+                            if(holder.mp == null){
+                                holder.mp = MediaPlayer.create(getContext(), uri);
+                            }
+                            Log.d("Log", "aqui");                           //continuo de onde parou
                             int duracao = holder.mp.getCurrentPosition();
-                            holder.mp.seekTo(duracao);
+                            int valorTempo = sharedPref.getInt(item.getTitle(), 0);
+                            Log.d("Valor da Pausa shared", String.valueOf(valorTempo));
+                            Log.d("Valor normal", String.valueOf(duracao));
+                            holder.mp.seekTo(valorTempo);
                             holder.mp.start();
                             holder.baixarPoad.setText("Parar");
                         }
