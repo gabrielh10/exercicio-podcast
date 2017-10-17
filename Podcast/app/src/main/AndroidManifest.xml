@@ -21,12 +21,14 @@
             </intent-filter>
         </activity>
         <activity android:name=".ui.SettingsActivity" />
+
         <receiver
             android:name=".ui.StaticReceiver"
             android:enabled="true"
             android:exported="true">
             <intent-filter>
                 <action android:name="br.ufpe.cin.if710.broadcasts.exemplo" />
+                <action android:name="br.ufpe.cin.if710.broadcasts.jobschedule"/>
             </intent-filter>
         </receiver>
 
@@ -42,7 +44,14 @@
             android:name=".ui.DownloadService"
             android:enabled="true"
             android:exported="true" />
-
+        <service
+            android:name=".ui.MyService"
+            android:enabled="true"
+            android:exported="true"
+            android:permission="android.permission.BIND_JOB_SERVICE" />
+        <service
+            android:name=".ui.AtualizarList"
+            android:exported="false"></service>
     </application>
 
 </manifest>

@@ -39,7 +39,7 @@ import br.ufpe.cin.if710.podcast.ui.adapter.XmlFeedAdapter;
 import static br.ufpe.cin.if710.podcast.db.PodcastDBHelper.EPISODE_TITLE;
 import static br.ufpe.cin.if710.podcast.db.PodcastDBHelper.columns;
 
-public class MainActivity extends Activity {
+public class MainActivity extends Activity{
     public static boolean status = false;   //bool pra checar se está ou nao em primeiro plano
 
     //ao fazer envio da resolucao, use este link no seu codigo!
@@ -213,7 +213,7 @@ public class MainActivity extends Activity {
     }
 
     //TODO Opcional - pesquise outros meios de obter arquivos da internet
-    private String getRssFeed(String feed) throws IOException {
+    public String getRssFeed(String feed) throws IOException {
         InputStream in = null;
         String rssFeed = "";
         try {

@@ -161,13 +161,18 @@ public class XmlFeedAdapter extends ArrayAdapter<ItemFeed> {
                             holder.mp.seekTo(valorTempo);
                             holder.mp.start();
                             holder.baixarPoad.setText("Parar");
-                        }
+                        }                                           //deleta o arquivo ao terminar de ouvir
                         holder.mp.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
                                      @Override                  //Quando acabar de tocar, deleta o arquivo
                                      public void onCompletion(MediaPlayer mediaPlayer) {
                                          File file = new File(item.getDownloadUri());
                                          file.delete();
                                          item.setDownloadUri("Nulo");
+                                         ContentValues cv = new ContentValues();         //consolida a deleção, retirando a uri tmb no bd
+                                         cv.put(PodcastDBHelper.EPISODE_FILE_URI, "Nulo");
+                                         String selection = PodcastProviderContract.EPISODE_LINK + " = ?";
+                                         String[] selection_args = new String[]{getItem(position).getLink()};
+                                         getContext().getContentResolver().update(PodcastProviderContract.EPISODE_LIST_URI, cv, selection, selection_args);
                                          Log.d("Log", "Opa deletei");
                                      }
                                  });

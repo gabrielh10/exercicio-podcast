@@ -10,5 +10,10 @@
         android:positiveButtonText="@string/change"
         android:title="@string/pref_desc"
         android:defaultValue="@string/feed_link" />
+    <SwitchPreference
+        android:defaultValue="false"
+        android:key="JobScheduling"
+        android:title="Ativar Job Scheduling" />
+
 
 </PreferenceScreen>
